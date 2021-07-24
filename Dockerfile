@@ -1,28 +1,19 @@
-  
-# use a python image
-FROM python:3.6
+ARG ARCH=
+ARG IMAGE_BASE=14-alpine
 
-# set the working directory in the container to /app
-WORKDIR /app
+FROM ${ARCH}node:$IMAGE_BASE
+LABEL Name="Node.js Demo App" Version=4.7.2
+LABEL org.opencontainers.image.source = "https://github.com/benc-uk/nodejs-demoapp"
+ENV NODE_ENV production
+WORKDIR /app 
 
-# add the current directory to the container as /app
-COPY . /app
+# For Docker layer caching do this BEFORE copying in rest of app
+COPY src/package*.json ./
+RUN npm install --production --silent
 
-# pip install flask
-RUN pip install --upgrade pip && \
-    pip install \
-        Flask \
-        awscli \
-        flake8 \
-        pylint \
-        pytest \
-        flask_mysqldb \
-        pytest-flask
+# NPM is done, now copy in the rest of the project to the workdir
+COPY src/. .
 
-# expose the default flask port
-EXPOSE 5000
-
-# execute the Flask app
-ENTRYPOINT ["python"]
-HEALTHCHECK CMD curl --fail http://localhost:5000/ || exit 1
-CMD ["/app/main.py"]
+# Port 3000 for our Express server 
+EXPOSE 3000
+ENTRYPOINT ["npm", "start"]
